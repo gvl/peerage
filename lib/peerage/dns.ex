@@ -26,26 +26,30 @@ defmodule Peerage.Via.Dns do
   - [Kubernetes DNS for services](http://kubernetes.io/docs/admin/dns/)
   """
 
-  def poll, do: lookup() |> to_names([])
+  def poll, do: lookup() |> to_names([]) |> remove_self()
 
   defp lookup do
-    hostname() |> String.to_charlist |> :inet_res.lookup(:in, :a)
+    hostname() |> String.to_charlist() |> :inet_res.lookup(:in, :a)
   end
 
   # turn list of ips into list of node names
   defp to_names([ip | rest], acc) when is_list(acc) do
-    Logger.debug " -> Peerage.Via.Dns resolved '#{hostname()}' to #{ to_s(ip) } "
-    to_names rest, [:"#{ app_name() }@#{ to_s(ip) }"] ++ acc
+    Logger.debug(" -> Peerage.Via.Dns resolved '#{hostname()}' to #{to_s(ip)} ")
+    to_names(rest, [:"#{app_name()}@#{to_s(ip)}"] ++ acc)
   end
-  defp to_names([], lst), do: lst
-  defp to_names(err,[]),  do: Logger.error(["dns err",err]); []
 
-  # helpers
-  defp app_name do
-    Application.get_env(:peerage, :app_name, "nonode")
+  defp to_names([], lst), do: lst
+
+  defp to_names(err, []) do
+    Logger.error(["dns err", err])
+    []
   end
-  defp hostname do
-    Application.get_env(:peerage, :dns_name, "localhost")
-  end
-  defp to_s(_ip = {a,b,c,d}), do: "#{a}.#{b}.#{c}.#{d}"
+
+  defp remove_self(nodes), do: nodes -- [Node.self()]
+
+  defp app_name, do: Application.get_env(:peerage, :app_name, "nonode")
+
+  defp hostname, do: Application.get_env(:peerage, :dns_name, "localhost")
+
+  defp to_s(_ip = {a, b, c, d}), do: "#{a}.#{b}.#{c}.#{d}"
 end
