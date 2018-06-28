@@ -3,7 +3,7 @@ defmodule PeerageTest do
   doctest Peerage
 
   @app :a1234
-  
+
   defmodule M do
     def f, do: "your key is 1234. write it down."
   end
@@ -18,16 +18,17 @@ defmodule PeerageTest do
     Application.put_env(:peerage, :app_name, "peerage")
     # note: if you're not connected to a network this won't work.
     #  it's dns resolution...
-    [ _addr | _rest ] = Peerage.Via.Dns.poll
+    [_addr | _rest] = Peerage.Via.Dns.poll()
   end
 
   test "Deferred config sanity check" do
     # see DeferredConfig for more extensive usage
     @app |> Application.put_env(:arbitrary, {:apply, {M, :f, []}})
-    
-    kv = @app
-    |> Application.get_all_env
-    |> DeferredConfig.transform_cfg
+
+    kv =
+      @app
+      |> Application.get_all_env()
+      |> DeferredConfig.transform_cfg()
 
     assert "your key" <> _ = kv[:arbitrary]
     assert {:apply, _} = Application.get_env(@app, :arbitrary)
@@ -38,10 +39,9 @@ defmodule PeerageTest do
 
   defp delete_all_env(app) do
     app
-    |> Application.get_all_env
+    |> Application.get_all_env()
     |> Enum.each(fn {k, _} ->
       Application.delete_env(app, k)
     end)
   end
-
 end
